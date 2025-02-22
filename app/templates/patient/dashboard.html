@@ -1,0 +1,247 @@
+{% extends "base.html" %}
+
+{% block title %}Patient Dashboard{% endblock %}
+
+{% block content %}
+<div class="space-y-6">
+    <!-- Welcome Section -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <div class="flex items-center justify-between">
+            <div>
+                <h1 class="text-2xl font-bold text-gray-800">
+                    Welcome, {{ current_user.name }}!
+                </h1>
+                <p class="text-gray-600 mt-1">
+                    Your digital health companion
+                </p>
+            </div>
+            <div class="text-right">
+                <p class="text-sm text-gray-600">Patient ID: {{ current_user.id }}</p>
+                <a href="{{ url_for('patient.profile') }}" class="text-blue-600 hover:text-blue-800 text-sm">
+                    View Profile
+                </a>
+            </div>
+        </div>
+    </div>
+    
+    <!-- Quick Actions -->
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-6">
+        <!-- Book Appointment -->
+        <a href="{{ url_for('patient.book_appointment') }}"
+           class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <div class="flex items-center space-x-4">
+                <div class="bg-blue-100 p-3 rounded-full">
+                    <i class="fas fa-calendar-plus text-blue-600 text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-gray-800">Book Appointment</h3>
+                    <p class="text-sm text-gray-600">Schedule a new consultation</p>
+                </div>
+            </div>
+        </a>
+        
+        <!-- View QR Code -->
+        <a href="#" onclick="showQRCode(); return false;"
+           class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <div class="flex items-center space-x-4">
+                <div class="bg-green-100 p-3 rounded-full">
+                    <i class="fas fa-qrcode text-green-600 text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-gray-800">Your QR Code</h3>
+                    <p class="text-sm text-gray-600">Show for quick check-in</p>
+                </div>
+            </div>
+        </a>
+        
+        <!-- Make Payment -->
+        <a href="{{ url_for('patient.payments') }}"
+           class="bg-white p-6 rounded-lg shadow-md hover:shadow-lg transition-shadow">
+            <div class="flex items-center space-x-4">
+                <div class="bg-purple-100 p-3 rounded-full">
+                    <i class="fas fa-credit-card text-purple-600 text-xl"></i>
+                </div>
+                <div>
+                    <h3 class="font-semibold text-gray-800">Payments</h3>
+                    <p class="text-sm text-gray-600">View and make payments</p>
+                </div>
+            </div>
+        </a>
+    </div>
+    
+    <!-- Upcoming Appointments -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">
+            Upcoming Appointments
+        </h2>
+        
+        {% if upcoming_appointments %}
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Date & Time
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Doctor
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Status
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Actions
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for appointment in upcoming_appointments %}
+                            <tr>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {{ appointment.date.strftime('%B %d, %Y') }}
+                                    <br>
+                                    <span class="text-sm text-gray-500">
+                                        {{ appointment.time.strftime('%I:%M %p') }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    Dr. {{ appointment.doctor.name }}
+                                    <br>
+                                    <span class="text-sm text-gray-500">
+                                        {{ appointment.doctor.specialty }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                               {% if appointment.status.value == 'scheduled' %}bg-yellow-100 text-yellow-800
+                                               {% elif appointment.status.value == 'confirmed' %}bg-green-100 text-green-800
+                                               {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                        {{ appointment.status.value|title }}
+                                    </span>
+                                </td>
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    {% if not appointment.payment %}
+                                        <a href="{{ url_for('patient.pay', appointment_id=appointment.id) }}"
+                                           class="text-blue-600 hover:text-blue-900">
+                                            Pay Now
+                                        </a>
+                                    {% else %}
+                                        <span class="text-green-600">Paid</span>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+            <div class="mt-4 text-right">
+                <a href="{{ url_for('patient.appointments') }}"
+                   class="text-blue-600 hover:text-blue-800 text-sm">
+                    View All Appointments →
+                </a>
+            </div>
+        {% else %}
+            <p class="text-gray-600 text-center py-4">
+                No upcoming appointments.
+                <a href="{{ url_for('patient.book_appointment') }}"
+                   class="text-blue-600 hover:text-blue-800">
+                    Book one now
+                </a>
+            </p>
+        {% endif %}
+    </div>
+    
+    <!-- Recent Payments -->
+    <div class="bg-white p-6 rounded-lg shadow-md">
+        <h2 class="text-xl font-semibold text-gray-800 mb-4">
+            Recent Payments
+        </h2>
+        
+        {% if recent_payments %}
+            <div class="space-y-4">
+                {% for payment in recent_payments %}
+                    <div class="flex items-center justify-between p-4 bg-gray-50 rounded-lg">
+                        <div>
+                            <p class="font-medium text-gray-800">
+                                {{ payment.amount|round(2) }} ETB
+                            </p>
+                            <p class="text-sm text-gray-600">
+                                via {{ payment.payment_method|title }}
+                            </p>
+                        </div>
+                        <div class="text-right">
+                            <p class="text-sm text-gray-600">
+                                {{ payment.created_at.strftime('%B %d, %Y') }}
+                            </p>
+                            <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                       {% if payment.status.value == 'paid' %}bg-green-100 text-green-800
+                                       {% elif payment.status.value == 'pending' %}bg-yellow-100 text-yellow-800
+                                       {% else %}bg-red-100 text-red-800{% endif %}">
+                                {{ payment.status.value|title }}
+                            </span>
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+            <div class="mt-4 text-right">
+                <a href="{{ url_for('patient.payments') }}"
+                   class="text-blue-600 hover:text-blue-800 text-sm">
+                    View All Payments →
+                </a>
+            </div>
+        {% else %}
+            <p class="text-gray-600 text-center py-4">
+                No recent payments.
+            </p>
+        {% endif %}
+    </div>
+</div>
+
+<!-- QR Code Modal -->
+<div id="qrModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div class="bg-white p-8 rounded-lg shadow-xl max-w-md w-full">
+        <div class="text-center">
+            <h3 class="text-xl font-bold text-gray-800 mb-4">Your Digital ID</h3>
+            {% if current_user.qr_code %}
+                <img src="{{ url_for('static', filename=current_user.qr_code) }}"
+                     alt="Patient QR Code"
+                     class="mx-auto mb-4"
+                     style="width: 200px; height: 200px;">
+                <p class="text-sm text-gray-600 mb-4">
+                    Show this QR code at the hospital for quick check-in
+                </p>
+                <a href="{{ url_for('static', filename=current_user.qr_code) }}"
+                   download="patient_qr_code.png"
+                   class="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
+                    Download QR Code
+                </a>
+            {% else %}
+                <p class="text-gray-600">QR code not available</p>
+            {% endif %}
+        </div>
+        <button onclick="hideQRCode()"
+                class="mt-6 w-full text-gray-600 hover:text-gray-800">
+            Close
+        </button>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function showQRCode() {
+    document.getElementById('qrModal').classList.remove('hidden');
+}
+
+function hideQRCode() {
+    document.getElementById('qrModal').classList.add('hidden');
+}
+
+// Close modal when clicking outside
+document.getElementById('qrModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        hideQRCode();
+    }
+});
+</script>
+{% endblock %} 

@@ -1,0 +1,211 @@
+{% extends "base.html" %}
+
+{% block title %}My Appointments{% endblock %}
+
+{% block content %}
+<div class="max-w-6xl mx-auto">
+    <div class="flex justify-between items-center mb-6">
+        <h1 class="text-2xl font-bold text-gray-800">My Appointments</h1>
+        <a href="{{ url_for('patient.book_appointment') }}"
+           class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+            Book New Appointment
+        </a>
+    </div>
+    
+    {% if appointments %}
+        <!-- Appointments List -->
+        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+            <div class="overflow-x-auto">
+                <table class="min-w-full divide-y divide-gray-200">
+                    <thead class="bg-gray-50">
+                        <tr>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Date & Time
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Doctor
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Reason
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Status
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Payment
+                            </th>
+                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
+                                Actions
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="bg-white divide-y divide-gray-200">
+                        {% for appointment in appointments %}
+                            <tr>
+                                <!-- Date & Time -->
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">
+                                        {{ appointment.date.strftime('%B %d, %Y') }}
+                                    </div>
+                                    <div class="text-sm text-gray-500">
+                                        {{ appointment.time.strftime('%I:%M %p') }}
+                                    </div>
+                                </td>
+                                
+                                <!-- Doctor -->
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <div class="text-sm font-medium text-gray-900">
+                                        Dr. {{ appointment.doctor.name }}
+                                    </div>
+                                    <div class="text-sm text-gray-500">
+                                        {{ appointment.doctor.specialty }}
+                                    </div>
+                                </td>
+                                
+                                <!-- Reason -->
+                                <td class="px-6 py-4">
+                                    <div class="text-sm text-gray-900 max-w-xs truncate">
+                                        {{ appointment.reason }}
+                                    </div>
+                                </td>
+                                
+                                <!-- Status -->
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                               {% if appointment.status.value == 'scheduled' %}bg-yellow-100 text-yellow-800
+                                               {% elif appointment.status.value == 'confirmed' %}bg-green-100 text-green-800
+                                               {% elif appointment.status.value == 'completed' %}bg-blue-100 text-blue-800
+                                               {% elif appointment.status.value == 'cancelled' %}bg-red-100 text-red-800
+                                               {% else %}bg-gray-100 text-gray-800{% endif %}">
+                                        {{ appointment.status.value|title }}
+                                    </span>
+                                </td>
+                                
+                                <!-- Payment -->
+                                <td class="px-6 py-4 whitespace-nowrap">
+                                    {% if appointment.payment %}
+                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
+                                                   {% if appointment.payment.status.value == 'paid' %}bg-green-100 text-green-800
+                                                   {% elif appointment.payment.status.value == 'pending' %}bg-yellow-100 text-yellow-800
+                                                   {% else %}bg-red-100 text-red-800{% endif %}">
+                                            {{ appointment.payment.status.value|title }}
+                                        </span>
+                                        {% if appointment.payment.status.value == 'paid' %}
+                                            <div class="text-sm text-gray-500 mt-1">
+                                                {{ appointment.payment.amount|round(2) }} ETB
+                                            </div>
+                                        {% endif %}
+                                    {% else %}
+                                        {% if appointment.status.value not in ['cancelled', 'no_show'] %}
+                                            <a href="{{ url_for('patient.pay', appointment_id=appointment.id) }}"
+                                               class="text-blue-600 hover:text-blue-900 text-sm font-medium">
+                                                Pay Now
+                                            </a>
+                                        {% else %}
+                                            <span class="text-gray-500 text-sm">N/A</span>
+                                        {% endif %}
+                                    {% endif %}
+                                </td>
+                                
+                                <!-- Actions -->
+                                <td class="px-6 py-4 whitespace-nowrap text-sm">
+                                    {% if appointment.status.value == 'scheduled' %}
+                                        <button onclick="cancelAppointment({{ appointment.id }})"
+                                                class="text-red-600 hover:text-red-900">
+                                            Cancel
+                                        </button>
+                                    {% elif appointment.status.value == 'completed' and appointment.medical_record %}
+                                        <button onclick="viewMedicalRecord({{ appointment.id }})"
+                                                class="text-blue-600 hover:text-blue-900">
+                                            View Record
+                                        </button>
+                                    {% endif %}
+                                </td>
+                            </tr>
+                        {% endfor %}
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    {% else %}
+        <!-- No Appointments -->
+        <div class="bg-white rounded-lg shadow-md p-6 text-center">
+            <div class="text-gray-500 mb-4">
+                You don't have any appointments yet.
+            </div>
+            <a href="{{ url_for('patient.book_appointment') }}"
+               class="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
+                Book Your First Appointment
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- Medical Record Modal -->
+<div id="medicalRecordModal" class="hidden fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center">
+    <div class="bg-white p-8 rounded-lg shadow-xl max-w-2xl w-full mx-4">
+        <div class="flex justify-between items-center mb-6">
+            <h3 class="text-xl font-bold text-gray-800">Medical Record</h3>
+            <button onclick="closeMedicalRecord()"
+                    class="text-gray-400 hover:text-gray-600">
+                <i class="fas fa-times"></i>
+            </button>
+        </div>
+        <div id="medicalRecordContent" class="space-y-4">
+            <!-- Content will be populated by JavaScript -->
+        </div>
+    </div>
+</div>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function cancelAppointment(appointmentId) {
+    if (confirm('Are you sure you want to cancel this appointment?')) {
+        // Here you would typically make an AJAX call to cancel the appointment
+        // For now, we'll just reload the page
+        window.location.href = "{{ url_for('patient.appointments') }}";
+    }
+}
+
+function viewMedicalRecord(appointmentId) {
+    const modal = document.getElementById('medicalRecordModal');
+    const content = document.getElementById('medicalRecordContent');
+    
+    // In a real application, you would fetch this data from the server
+    // For now, we'll use mock data
+    content.innerHTML = `
+        <div class="border-b pb-4">
+            <p class="text-sm text-gray-600">Appointment Date</p>
+            <p class="font-medium">March 15, 2024</p>
+        </div>
+        <div class="border-b pb-4">
+            <p class="text-sm text-gray-600">Diagnosis</p>
+            <p class="font-medium">Sample diagnosis text</p>
+        </div>
+        <div class="border-b pb-4">
+            <p class="text-sm text-gray-600">Treatment</p>
+            <p class="font-medium">Sample treatment plan</p>
+        </div>
+        <div>
+            <p class="text-sm text-gray-600">Notes</p>
+            <p class="font-medium">Additional notes from the doctor</p>
+        </div>
+    `;
+    
+    modal.classList.remove('hidden');
+}
+
+function closeMedicalRecord() {
+    const modal = document.getElementById('medicalRecordModal');
+    modal.classList.add('hidden');
+}
+
+// Close modal when clicking outside
+document.getElementById('medicalRecordModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeMedicalRecord();
+    }
+});
+</script>
+{% endblock %} 

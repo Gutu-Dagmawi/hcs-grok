@@ -71,15 +71,20 @@ hcs-grok/
 ## Development Status
 
 - [x] Project structure setup
-- [ ] Database models implementation
-- [ ] Authentication system
-- [ ] Patient registration
-- [ ] QR code generation
-- [ ] Appointment booking
+- [x] Database models implementation
+- [x] Authentication system
+- [x] Patient registration
+- [x] QR code generation
+- [x] Base templates and layouts
+- [x] Landing page
+- [x] Patient dashboard
+- [x] Patient profile management
+- [ ] Appointment booking system
 - [ ] Mock payment integration
-- [ ] Admin dashboard
+- [ ] Doctor dashboard and availability
+- [ ] Admin dashboard and management
 - [ ] Analytics and reporting
-- [ ] Testing
+- [ ] Testing and documentation
 
 ## Contributing
 

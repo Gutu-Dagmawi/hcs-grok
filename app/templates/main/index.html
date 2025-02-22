@@ -1,0 +1,100 @@
+{% extends "base.html" %}
+
+{% block title %}Welcome{% endblock %}
+
+{% block content %}
+<div class="flex flex-col items-center justify-center min-h-[70vh] text-center">
+    <h1 class="text-4xl md:text-6xl font-bold text-gray-800 mb-6">
+        Welcome to Hospital Cardless System
+    </h1>
+    
+    <p class="text-xl text-gray-600 mb-8 max-w-2xl">
+        Experience modern healthcare management with our digital identification system.
+        No more physical cards - just scan and go!
+    </p>
+    
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-8 w-full max-w-4xl mb-12">
+        <!-- Feature 1 -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <i class="fas fa-qrcode text-4xl text-blue-600 mb-4"></i>
+            <h3 class="text-xl font-semibold mb-2">Digital ID</h3>
+            <p class="text-gray-600">
+                Get your unique QR code for quick and easy identification
+            </p>
+        </div>
+        
+        <!-- Feature 2 -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <i class="fas fa-calendar-alt text-4xl text-blue-600 mb-4"></i>
+            <h3 class="text-xl font-semibold mb-2">Easy Booking</h3>
+            <p class="text-gray-600">
+                Book appointments with your preferred doctors online
+            </p>
+        </div>
+        
+        <!-- Feature 3 -->
+        <div class="bg-white p-6 rounded-lg shadow-md">
+            <i class="fas fa-credit-card text-4xl text-blue-600 mb-4"></i>
+            <h3 class="text-xl font-semibold mb-2">Simple Payments</h3>
+            <p class="text-gray-600">
+                Pay for services using Telebirr or Chapa
+            </p>
+        </div>
+    </div>
+    
+    {% if not current_user.is_authenticated %}
+        <div class="space-x-4">
+            <a href="{{ url_for('auth.register') }}"
+               class="bg-blue-600 text-white px-8 py-3 rounded-lg text-lg font-semibold hover:bg-blue-700 transition duration-300">
+                Register Now
+            </a>
+            <a href="{{ url_for('auth.login') }}"
+               class="bg-gray-200 text-gray-800 px-8 py-3 rounded-lg text-lg font-semibold hover:bg-gray-300 transition duration-300">
+                Login
+            </a>
+        </div>
+    {% endif %}
+</div>
+
+<!-- How It Works Section -->
+<div class="bg-gray-50 py-16 mt-12 -mx-6">
+    <div class="max-w-4xl mx-auto px-6">
+        <h2 class="text-3xl font-bold text-center mb-12">How It Works</h2>
+        
+        <div class="space-y-8">
+            <!-- Step 1 -->
+            <div class="flex items-center space-x-6">
+                <div class="flex-shrink-0 w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center text-xl font-bold">
+                    1
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold mb-2">Register Online</h3>
+                    <p class="text-gray-600">Create your account and get your digital ID with a unique QR code.</p>
+                </div>
+            </div>
+            
+            <!-- Step 2 -->
+            <div class="flex items-center space-x-6">
+                <div class="flex-shrink-0 w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center text-xl font-bold">
+                    2
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold mb-2">Book Appointments</h3>
+                    <p class="text-gray-600">Choose your doctor and preferred time slot for consultations.</p>
+                </div>
+            </div>
+            
+            <!-- Step 3 -->
+            <div class="flex items-center space-x-6">
+                <div class="flex-shrink-0 w-12 h-12 bg-blue-600 text-white rounded-full flex items-center justify-center text-xl font-bold">
+                    3
+                </div>
+                <div>
+                    <h3 class="text-xl font-semibold mb-2">Visit the Hospital</h3>
+                    <p class="text-gray-600">Simply show your QR code at reception for quick check-in.</p>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+{% endblock %} 

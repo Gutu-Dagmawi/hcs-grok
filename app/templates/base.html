@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}{% endblock %} - Hospital Cardless System</title>
+    
+    <!-- Tailwind CSS via CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    
+    <!-- Custom CSS -->
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    
+    <!-- Font Awesome -->
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0/css/all.min.css">
+    
+    {% block head %}{% endblock %}
+</head>
+<body class="bg-gray-100 min-h-screen">
+    <!-- Navigation -->
+    <nav class="bg-blue-600 text-white shadow-lg">
+        <div class="container mx-auto px-6 py-3">
+            <div class="flex items-center justify-between">
+                <div class="flex items-center">
+                    <a href="{{ url_for('main.index') }}" class="text-xl font-bold">
+                        HCS
+                    </a>
+                </div>
+                
+                <div class="flex items-center space-x-4">
+                    {% if current_user.is_authenticated %}
+                        {% if current_user.user_type.value == 'admin' %}
+                            <a href="{{ url_for('admin.dashboard') }}" class="hover:text-gray-200">Dashboard</a>
+                            <a href="{{ url_for('admin.patients') }}" class="hover:text-gray-200">Patients</a>
+                            <a href="{{ url_for('admin.doctors') }}" class="hover:text-gray-200">Doctors</a>
+                            <a href="{{ url_for('admin.appointments') }}" class="hover:text-gray-200">Appointments</a>
+                            <a href="{{ url_for('admin.payments') }}" class="hover:text-gray-200">Payments</a>
+                            <a href="{{ url_for('admin.statistics') }}" class="hover:text-gray-200">Statistics</a>
+                        {% elif current_user.user_type.value == 'doctor' %}
+                            <a href="{{ url_for('doctor.dashboard') }}" class="hover:text-gray-200">Dashboard</a>
+                            <a href="{{ url_for('doctor.appointments') }}" class="hover:text-gray-200">Appointments</a>
+                            <a href="{{ url_for('doctor.availability') }}" class="hover:text-gray-200">Availability</a>
+                        {% else %}
+                            <a href="{{ url_for('patient.dashboard') }}" class="hover:text-gray-200">Dashboard</a>
+                            <a href="{{ url_for('patient.appointments') }}" class="hover:text-gray-200">Appointments</a>
+                            <a href="{{ url_for('patient.payments') }}" class="hover:text-gray-200">Payments</a>
+                            <a href="{{ url_for('patient.profile') }}" class="hover:text-gray-200">Profile</a>
+                        {% endif %}
+                        <a href="{{ url_for('auth.logout') }}" class="bg-red-500 hover:bg-red-600 px-4 py-2 rounded">
+                            Logout
+                        </a>
+                    {% else %}
+                        <a href="{{ url_for('auth.login') }}" class="hover:text-gray-200">Login</a>
+                        <a href="{{ url_for('auth.register') }}" class="bg-white text-blue-600 hover:bg-gray-100 px-4 py-2 rounded">
+                            Register
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        </div>
+    </nav>
+    
+    <!-- Flash Messages -->
+    {% with messages = get_flashed_messages(with_categories=true) %}
+        {% if messages %}
+            <div class="container mx-auto px-6 py-4">
+                {% for category, message in messages %}
+                    <div class="p-4 mb-4 rounded {% if category == 'error' %}bg-red-100 text-red-700{% else %}bg-green-100 text-green-700{% endif %}">
+                        {{ message }}
+                    </div>
+                {% endfor %}
+            </div>
+        {% endif %}
+    {% endwith %}
+    
+    <!-- Main Content -->
+    <main class="container mx-auto px-6 py-8">
+        {% block content %}{% endblock %}
+    </main>
+    
+    <!-- Footer -->
+    <footer class="bg-gray-800 text-white py-6 mt-auto">
+        <div class="container mx-auto px-6">
+            <div class="flex justify-between items-center">
+                <div>
+                    <p class="text-sm">&copy; 2024 Hospital Cardless System. All rights reserved.</p>
+                </div>
+                <div class="flex space-x-4">
+                    <a href="#" class="text-gray-400 hover:text-white">Privacy Policy</a>
+                    <a href="#" class="text-gray-400 hover:text-white">Terms of Service</a>
+                    <a href="#" class="text-gray-400 hover:text-white">Contact</a>
+                </div>
+            </div>
+        </div>
+    </footer>
+    
+    <!-- Scripts -->
+    <script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+    {% block scripts %}{% endblock %}
+</body>
+</html> 
