@@ -4,24 +4,23 @@
 
 {% block content %}
 <div class="space-y-6">
-    <!-- Welcome Section -->
-    <div class="bg-white p-6 rounded-lg shadow-md">
-        <div class="flex items-center justify-between">
-            <div>
-                <h1 class="text-2xl font-bold text-gray-800">
-                    Welcome, {{ current_user.name }}!
-                </h1>
-                <p class="text-gray-600 mt-1">
-                    Your digital health companion
-                </p>
+    <!-- Profile Header -->
+    <div class="bg-blue-600 text-white p-6">
+        <div class="flex items-center space-x-4">
+            <div class="bg-white p-3 rounded-full">
+                <i class="fas fa-user text-blue-600 text-2xl"></i>
             </div>
-            <div class="text-right">
-                <p class="text-sm text-gray-600">Patient ID: {{ current_user.id }}</p>
-                <a href="{{ url_for('patient.profile') }}" class="text-blue-600 hover:text-blue-800 text-sm">
-                    View Profile
-                </a>
+            <div>
+                <h1 class="text-2xl font-bold">{{ current_user.first_name }} {{ current_user.last_name }}</h1>
+                <p class="text-blue-100">Patient ID: {{ current_user.patient.id }}</p>
             </div>
         </div>
+    </div>
+    
+    <!-- Welcome Section -->
+    <div class="bg-white p-6 rounded-lg shadow-md mb-6">
+        <h1 class="text-2xl font-semibold text-gray-800">Welcome, {{ current_user.first_name }}!</h1>
+        <p class="text-gray-600 mt-2">Here's an overview of your health information and upcoming appointments.</p>
     </div>
     
     <!-- Quick Actions -->

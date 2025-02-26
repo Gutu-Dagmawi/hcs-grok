@@ -7,13 +7,27 @@ import qrcode
 from . import patient_bp
 from app.utils.decorators import patient_required
 from qrcode import QRCode
-from app.models import User
+from app.models import User, Patient
+
+@patient_bp.route('/dashboard')
+@login_required
+@patient_required
+def dashboard():
+    # Debug logging
+    current_app.logger.debug(f"Current patient ID: {current_user.patient.id}")
+    current_app.logger.debug(f"Current QR code path: {current_user.patient.qr_code}")
+    
+    return render_template('patient/dashboard.html')
 
 @patient_bp.route('/generate-qr', methods=['POST'])
 @login_required
 @patient_required
 def generate_qr():
     try:
+        current_app.logger.info(f"Generating QR for user {current_user.id}")
+        current_app.logger.info(f"Patient info: {current_user.patient}")
+        current_app.logger.info(f"Patient ID: {current_user.patient.id if current_user.patient else 'None'}")
+        
         # Create QR code data
         qr_data = {
             'patient_id': current_user.patient.id,
@@ -44,10 +58,11 @@ def generate_qr():
             old_file_path = os.path.join(static_folder, current_user.patient.qr_code)
             try:
                 os.remove(old_file_path)
-            except OSError:
-                pass  # File might not exist
+                current_app.logger.debug(f"Deleted old QR code: {old_file_path}")
+            except OSError as e:
+                current_app.logger.warning(f"Could not delete old QR code: {e}")
         
-        # Save QR code image with timestamp to prevent caching
+        # Save QR code image with patient-specific filename
         timestamp = datetime.now().strftime('%Y%m%d_%H%M%S')
         filename = f'patient_qr_{current_user.patient.id}_{timestamp}.png'
         file_path = os.path.join(qr_dir, filename)
@@ -55,8 +70,19 @@ def generate_qr():
         
         # Store the relative path in the database
         relative_path = os.path.join('qr_codes', filename).replace('\\', '/')
-        current_user.patient.qr_code = relative_path
+        
+        # Force database update
+        db.session.execute(
+            db.update(Patient)
+            .where(Patient.id == current_user.patient.id)
+            .values(qr_code=relative_path)
+        )
         db.session.commit()
+        
+        # Refresh the patient object
+        db.session.refresh(current_user.patient)
+        
+        current_app.logger.debug(f"New QR code path: {current_user.patient.qr_code}")
         
         return jsonify({'success': True})
     except Exception as e:
@@ -114,4 +140,4 @@ def profile():
         
         return redirect(url_for('patient.profile'))
     
-    return render_template('patient/profile.html') 
+    return render_template('patient/profile.html')

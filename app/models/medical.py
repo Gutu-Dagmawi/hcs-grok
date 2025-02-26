@@ -40,11 +40,11 @@ class MedicalRecord(Model, TimestampMixin):
     
     id = db.Column(db.Integer, primary_key=True)
     patient_id = db.Column(db.Integer, db.ForeignKey('patients.id'), nullable=False)
-    date = db.Column(db.DateTime, default=datetime.utcnow)
+    doctor_id = db.Column(db.Integer, db.ForeignKey('doctors.id'), nullable=False)
     diagnosis = db.Column(db.Text)
     prescription = db.Column(db.Text)
     notes = db.Column(db.Text)
-    attachments = db.Column(db.JSON)
+    date = db.Column(db.DateTime, default=datetime.utcnow)
 
 class Payment(Model, TimestampMixin):
     """Payment model."""

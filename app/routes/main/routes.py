@@ -1,5 +1,6 @@
-from flask import render_template, redirect, url_for, current_app
+from flask import render_template, redirect, url_for, current_app, jsonify
 from flask_login import login_required, current_user
+from app.utils.decorators import patient_required
 from . import main_bp
 
 @main_bp.route('/')
@@ -33,12 +34,17 @@ def dashboard():
     current_app.logger.warning(f"Unrecognized user type: {current_user.user_type}")
     return render_template('dashboard.html')
 
+
 @main_bp.route('/debug')
 @login_required
+@patient_required
 def debug():
-    return {
+    debug_info = {
+        'user_id': current_user.id,
+        'patient_id': current_user.patient.id,
+        'email': current_user.email,
+        'name': f"{current_user.first_name} {current_user.last_name}",
+        'qr_code_path': current_user.patient.qr_code,
         'user_type': current_user.user_type,
-        'first_name': current_user.first_name,
-        'last_name': current_user.last_name,
-        'email': current_user.email
-    } 
+    }
+    return jsonify(debug_info) 

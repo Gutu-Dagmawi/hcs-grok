@@ -4,6 +4,7 @@ from flask_wtf.csrf import CSRFProtect
 from config import Config
 from app.extensions import db, migrate
 import os
+from app.cli import clear_users_command
 
 login_manager = LoginManager()
 login_manager.login_view = 'auth.login'
@@ -42,5 +43,8 @@ def create_app():
     app.register_blueprint(main_bp)
     app.register_blueprint(admin_bp)
     app.register_blueprint(patient_bp)
+
+    # Register CLI commands
+    app.cli.add_command(clear_users_command)
 
     return app 

@@ -4,7 +4,8 @@ from flask_wtf import FlaskForm
 from wtforms import StringField, PasswordField, SubmitField, EmailField, TelField, BooleanField
 from wtforms.validators import DataRequired, Email, EqualTo, Length
 from . import auth_bp
-from app.models import User, Patient
+from app.models import User, Patient, Doctor
+from app.extensions import db
 
 class LoginForm(FlaskForm):
     email = EmailField('Email', validators=[DataRequired(), Email()])
@@ -50,45 +51,94 @@ def login():
 
 @auth_bp.route('/register', methods=['GET', 'POST'])
 def register():
-    if current_user.is_authenticated:
-        return redirect(url_for('main.dashboard'))
-
+    form_data = {}
     if request.method == 'POST':
-        # Get form data
-        name = request.form.get('name')
-        email = request.form.get('email')
-        phone = request.form.get('phone')
-        password = request.form.get('password')
+        form_data = {
+            'email': request.form['email'],
+            'first_name': request.form['first_name'],
+            'last_name': request.form['last_name']
+        }
         
-        # Create new user
-        try:
-            # Split name into first_name and last_name
-            name_parts = name.split()
-            first_name = name_parts[0]
-            last_name = ' '.join(name_parts[1:]) if len(name_parts) > 1 else ''
-
-            # Create user with explicit user_type
-            user = User(
-                email=email,
-                first_name=first_name,
-                last_name=last_name,
-                user_type='patient'  # Explicitly set user type
-            )
-            user.password = password  # This should hash the password
-            user.save()
-
-            flash('Registration successful! Please log in.')
-            return redirect(url_for('auth.login'))
-
-        except Exception as e:
-            current_app.logger.error(f"Registration error: {str(e)}")
-            flash('An error occurred during registration')
+        if request.form['password'] != request.form['confirm_password']:
+            flash('Passwords do not match', 'error')
+            return render_template('auth/register.html', form_data=form_data)
             
-    return render_template('auth/register.html')
+        try:
+            # Check if email exists
+            if User.query.filter_by(email=request.form['email']).first():
+                flash('Email address already registered', 'error')
+                return render_template('auth/register.html', form_data=form_data, email_error=True)
+            
+            # Create user
+            user = User(
+                email=request.form['email'],
+                first_name=request.form['first_name'],
+                last_name=request.form['last_name'],
+                user_type='patient'
+            )
+            user.set_password(request.form['password'])
+            
+            # Create patient
+            patient = Patient()
+            user.patient = patient
+            
+            # Add and commit in one go
+            db.session.add(user)
+            db.session.commit()
+            
+            flash('Registration successful. Please login.', 'success')
+            return redirect(url_for('auth.login'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash('Registration failed. Please try again.', 'error')
+            current_app.logger.error(f"Registration error: {str(e)}")
+            return render_template('auth/register.html', form_data=form_data)
+    
+    return render_template('auth/register.html', form_data=form_data)
 
 @auth_bp.route('/logout')
 @login_required
 def logout():
     logout_user()
     flash('You have been logged out.')
-    return redirect(url_for('main.index')) 
+    return redirect(url_for('main.index'))
+
+@auth_bp.route('/register/doctor', methods=['GET', 'POST'])
+def register_doctor():
+    if request.method == 'POST':
+        try:
+            # Create user
+            user = User(
+                email=request.form['email'],
+                first_name=request.form['first_name'],
+                last_name=request.form['last_name'],
+                user_type='doctor'
+            )
+            user.set_password(request.form['password'])
+            db.session.add(user)
+            db.session.flush()  # Get user.id without committing
+            
+            # Create doctor profile
+            doctor = Doctor(
+                user_id=user.id,
+                specialization=request.form['specialization'],
+                license_number=request.form['license_number'],
+                education=request.form['education'],
+                experience_years=int(request.form['experience_years']),
+                office_number=request.form['office_number'],
+                available_days=request.form['available_days'],
+                consultation_fee=float(request.form['consultation_fee'])
+            )
+            db.session.add(doctor)
+            db.session.commit()
+            
+            flash('Registration successful. Please wait for admin approval.', 'success')
+            return redirect(url_for('auth.login'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash('Registration failed. Please try again.', 'error')
+            current_app.logger.error(f"Doctor registration error: {str(e)}")
+    
+    return render_template('auth/register_doctor.html') 

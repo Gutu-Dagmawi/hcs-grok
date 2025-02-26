@@ -1,8 +1,8 @@
 """Initial migration
 
-Revision ID: 4e320f2bc0d2
+Revision ID: 43a0ffea69c3
 Revises: 
-Create Date: 2025-02-26 16:59:39.638149
+Create Date: 2025-02-26 20:53:56.345803
 
 """
 from alembic import op
@@ -10,7 +10,7 @@ import sqlalchemy as sa
 
 
 # revision identifiers, used by Alembic.
-revision = '4e320f2bc0d2'
+revision = '43a0ffea69c3'
 down_revision = None
 branch_labels = None
 depends_on = None
@@ -42,14 +42,29 @@ def upgrade():
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
     sa.Column('specialization', sa.String(length=100), nullable=True),
+    sa.Column('license_number', sa.String(length=50), nullable=True),
+    sa.Column('education', sa.String(length=255), nullable=True),
+    sa.Column('experience_years', sa.Integer(), nullable=True),
+    sa.Column('office_number', sa.String(length=20), nullable=True),
+    sa.Column('available_days', sa.String(length=100), nullable=True),
+    sa.Column('consultation_fee', sa.Float(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
-    sa.PrimaryKeyConstraint('id')
+    sa.PrimaryKeyConstraint('id'),
+    sa.UniqueConstraint('license_number', name='uq_doctor_license_number')
     )
     op.create_table('patients',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('user_id', sa.Integer(), nullable=False),
+    sa.Column('qr_code', sa.String(length=255), nullable=True),
+    sa.Column('phone', sa.String(length=20), nullable=True),
+    sa.Column('date_of_birth', sa.Date(), nullable=True),
+    sa.Column('address', sa.String(length=255), nullable=True),
+    sa.Column('blood_type', sa.String(length=5), nullable=True),
+    sa.Column('gender', sa.String(length=10), nullable=True),
+    sa.Column('emergency_contact', sa.String(length=100), nullable=True),
+    sa.Column('emergency_phone', sa.String(length=20), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
     sa.ForeignKeyConstraint(['user_id'], ['users.id'], ),
@@ -73,13 +88,14 @@ def upgrade():
     op.create_table('medical_records',
     sa.Column('id', sa.Integer(), nullable=False),
     sa.Column('patient_id', sa.Integer(), nullable=False),
-    sa.Column('date', sa.DateTime(), nullable=True),
+    sa.Column('doctor_id', sa.Integer(), nullable=False),
     sa.Column('diagnosis', sa.Text(), nullable=True),
     sa.Column('prescription', sa.Text(), nullable=True),
     sa.Column('notes', sa.Text(), nullable=True),
-    sa.Column('attachments', sa.JSON(), nullable=True),
+    sa.Column('date', sa.DateTime(), nullable=True),
     sa.Column('created_at', sa.DateTime(), nullable=True),
     sa.Column('updated_at', sa.DateTime(), nullable=True),
+    sa.ForeignKeyConstraint(['doctor_id'], ['doctors.id'], ),
     sa.ForeignKeyConstraint(['patient_id'], ['patients.id'], ),
     sa.PrimaryKeyConstraint('id')
     )
