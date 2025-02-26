@@ -106,8 +106,30 @@ def logout():
 
 @auth_bp.route('/register/doctor', methods=['GET', 'POST'])
 def register_doctor():
+    form_data = {}
     if request.method == 'POST':
+        form_data = {
+            'email': request.form['email'],
+            'first_name': request.form['first_name'],
+            'last_name': request.form['last_name'],
+            'specialization': request.form['specialization'],
+            'license_number': request.form['license_number'],
+            'education': request.form['education'],
+            'experience_years': request.form['experience_years'],
+            'office_number': request.form['office_number'],
+            'consultation_fee': request.form['consultation_fee']
+        }
+        
+        if request.form['password'] != request.form['confirm_password']:
+            flash('Passwords do not match', 'error')
+            return render_template('auth/register_doctor.html', form_data=form_data)
+            
         try:
+            # Check if email exists
+            if User.query.filter_by(email=request.form['email']).first():
+                flash('Email address already registered', 'error')
+                return render_template('auth/register_doctor.html', form_data=form_data, email_error=True)
+            
             # Create user
             user = User(
                 email=request.form['email'],
@@ -116,21 +138,20 @@ def register_doctor():
                 user_type='doctor'
             )
             user.set_password(request.form['password'])
-            db.session.add(user)
-            db.session.flush()  # Get user.id without committing
             
             # Create doctor profile
             doctor = Doctor(
-                user_id=user.id,
                 specialization=request.form['specialization'],
                 license_number=request.form['license_number'],
                 education=request.form['education'],
                 experience_years=int(request.form['experience_years']),
                 office_number=request.form['office_number'],
-                available_days=request.form['available_days'],
                 consultation_fee=float(request.form['consultation_fee'])
             )
-            db.session.add(doctor)
+            user.doctor = doctor
+            
+            # Add and commit
+            db.session.add(user)
             db.session.commit()
             
             flash('Registration successful. Please wait for admin approval.', 'success')
@@ -140,5 +161,6 @@ def register_doctor():
             db.session.rollback()
             flash('Registration failed. Please try again.', 'error')
             current_app.logger.error(f"Doctor registration error: {str(e)}")
+            return render_template('auth/register_doctor.html', form_data=form_data)
     
-    return render_template('auth/register_doctor.html') 
+    return render_template('auth/register_doctor.html', form_data=form_data)

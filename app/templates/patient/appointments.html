@@ -7,7 +7,7 @@
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-gray-800">My Appointments</h1>
         <a href="{{ url_for('patient.book_appointment') }}"
-           class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+           class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
             Book New Appointment
         </a>
     </div>
@@ -32,9 +32,6 @@
                                 Status
                             </th>
                             <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
-                                Payment
-                            </th>
-                            <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">
                                 Actions
                             </th>
                         </tr>
@@ -42,82 +39,46 @@
                     <tbody class="bg-white divide-y divide-gray-200">
                         {% for appointment in appointments %}
                             <tr>
-                                <!-- Date & Time -->
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm font-medium text-gray-900">
                                         {{ appointment.date.strftime('%B %d, %Y') }}
                                     </div>
                                     <div class="text-sm text-gray-500">
-                                        {{ appointment.time.strftime('%I:%M %p') }}
+                                        {{ appointment.time.strftime('%I:%M %p') if appointment.time else 'No time set' }}
                                     </div>
                                 </td>
                                 
-                                <!-- Doctor -->
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm font-medium text-gray-900">
-                                        Dr. {{ appointment.doctor.name }}
+                                        Dr. {{ appointment.doctor_rel.user.first_name }} {{ appointment.doctor_rel.user.last_name }}
                                     </div>
                                     <div class="text-sm text-gray-500">
-                                        {{ appointment.doctor.specialty }}
+                                        {{ appointment.doctor_rel.specialization }}
                                     </div>
                                 </td>
                                 
-                                <!-- Reason -->
                                 <td class="px-6 py-4">
                                     <div class="text-sm text-gray-900 max-w-xs truncate">
                                         {{ appointment.reason }}
                                     </div>
                                 </td>
                                 
-                                <!-- Status -->
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                                               {% if appointment.status.value == 'scheduled' %}bg-yellow-100 text-yellow-800
-                                               {% elif appointment.status.value == 'confirmed' %}bg-green-100 text-green-800
-                                               {% elif appointment.status.value == 'completed' %}bg-blue-100 text-blue-800
-                                               {% elif appointment.status.value == 'cancelled' %}bg-red-100 text-red-800
+                                               {% if appointment.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                               {% elif appointment.status == 'confirmed' %}bg-green-100 text-green-800
+                                               {% elif appointment.status == 'completed' %}bg-blue-100 text-blue-800
+                                               {% elif appointment.status == 'cancelled' %}bg-red-100 text-red-800
                                                {% else %}bg-gray-100 text-gray-800{% endif %}">
-                                        {{ appointment.status.value|title }}
+                                        {{ appointment.status|title }}
                                     </span>
                                 </td>
                                 
-                                <!-- Payment -->
-                                <td class="px-6 py-4 whitespace-nowrap">
-                                    {% if appointment.payment %}
-                                        <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                                                   {% if appointment.payment.status.value == 'paid' %}bg-green-100 text-green-800
-                                                   {% elif appointment.payment.status.value == 'pending' %}bg-yellow-100 text-yellow-800
-                                                   {% else %}bg-red-100 text-red-800{% endif %}">
-                                            {{ appointment.payment.status.value|title }}
-                                        </span>
-                                        {% if appointment.payment.status.value == 'paid' %}
-                                            <div class="text-sm text-gray-500 mt-1">
-                                                {{ appointment.payment.amount|round(2) }} ETB
-                                            </div>
-                                        {% endif %}
-                                    {% else %}
-                                        {% if appointment.status.value not in ['cancelled', 'no_show'] %}
-                                            <a href="{{ url_for('patient.pay', appointment_id=appointment.id) }}"
-                                               class="text-blue-600 hover:text-blue-900 text-sm font-medium">
-                                                Pay Now
-                                            </a>
-                                        {% else %}
-                                            <span class="text-gray-500 text-sm">N/A</span>
-                                        {% endif %}
-                                    {% endif %}
-                                </td>
-                                
-                                <!-- Actions -->
                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                    {% if appointment.status.value == 'scheduled' %}
+                                    {% if appointment.status == 'pending' %}
                                         <button onclick="cancelAppointment({{ appointment.id }})"
                                                 class="text-red-600 hover:text-red-900">
                                             Cancel
-                                        </button>
-                                    {% elif appointment.status.value == 'completed' and appointment.medical_record %}
-                                        <button onclick="viewMedicalRecord({{ appointment.id }})"
-                                                class="text-blue-600 hover:text-blue-900">
-                                            View Record
                                         </button>
                                     {% endif %}
                                 </td>
@@ -157,14 +118,13 @@
     </div>
 </div>
 {% endblock %}
-
 {% block scripts %}
 <script>
 function cancelAppointment(appointmentId) {
     if (confirm('Are you sure you want to cancel this appointment?')) {
         // Here you would typically make an AJAX call to cancel the appointment
         // For now, we'll just reload the page
-        window.location.href = "{{ url_for('patient.appointments') }}";
+        window.location.href = "{{ url_for('patient.view_appointments') }}";
     }
 }
 

@@ -42,7 +42,7 @@
                             <a href="{{ url_for('doctor.availability') }}" class="hover:text-gray-200">Availability</a>
                         {% elif current_user.user_type == 'patient' %}
                             <a href="{{ url_for('main.dashboard') }}" class="hover:text-gray-200">Dashboard</a>
-                            <a href="{{ url_for('patient.appointments') }}" class="hover:text-gray-200">Appointments</a>
+                            <a href="{{ url_for('patient.view_appointments') }}" class="hover:text-gray-200">Appointments</a>
                             <a href="{{ url_for('patient.payments') }}" class="hover:text-gray-200">Payments</a>
                             <a href="{{ url_for('patient.profile') }}" class="hover:text-gray-200">Profile</a>
                         {% endif %}

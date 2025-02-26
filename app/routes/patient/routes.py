@@ -2,22 +2,45 @@ from flask import jsonify, current_app, render_template, redirect, url_for, flas
 from flask_login import login_required, current_user
 from app.extensions import db
 import os
-from datetime import datetime
+from datetime import datetime, date, time
 import qrcode
+
+from app.models.medical import Appointment
 from . import patient_bp
 from app.utils.decorators import patient_required
 from qrcode import QRCode
-from app.models import User, Patient
+from app.models import User, Patient, Doctor
 
 @patient_bp.route('/dashboard')
 @login_required
 @patient_required
 def dashboard():
-    # Debug logging
-    current_app.logger.debug(f"Current patient ID: {current_user.patient.id}")
-    current_app.logger.debug(f"Current QR code path: {current_user.patient.qr_code}")
-    
-    return render_template('patient/dashboard.html')
+    try:
+        # Get upcoming appointments
+        today = date.today()
+        upcoming_appointments = (
+            Appointment.query
+            .filter(
+                Appointment.patient_id == current_user.patient.id,
+                Appointment.date >= today,
+                Appointment.status.in_(['scheduled', 'confirmed'])
+            )
+            .order_by(
+                Appointment.date.asc(),
+                Appointment.time.asc()
+            )
+            .limit(5)
+            .all()
+        )
+        
+        return render_template('patient/dashboard.html',
+                             upcoming_appointments=upcoming_appointments)
+                             
+    except Exception as e:
+        current_app.logger.error(f"Dashboard error: {str(e)}")
+        flash('Error loading dashboard', 'error')
+        return render_template('patient/dashboard.html',
+                             upcoming_appointments=[])
 
 @patient_bp.route('/generate-qr', methods=['POST'])
 @login_required
@@ -28,7 +51,12 @@ def generate_qr():
         current_app.logger.info(f"Patient info: {current_user.patient}")
         current_app.logger.info(f"Patient ID: {current_user.patient.id if current_user.patient else 'None'}")
         
-        # Create QR code data
+        # Ensure patient exists
+        if not current_user.patient:
+            current_app.logger.error(f"No patient profile for user {current_user.id}")
+            return jsonify({'success': False, 'error': 'No patient profile found'})
+            
+        # Create QR code data with patient-specific information
         qr_data = {
             'patient_id': current_user.patient.id,
             'email': current_user.email,
@@ -92,13 +120,78 @@ def generate_qr():
 @patient_bp.route('/appointments')
 @login_required
 @patient_required
-def appointments():
-    return render_template('patient/appointments.html')
+def view_appointments():
+    try:
+        # Get all appointments for the current patient
+        appointments = Appointment.query.filter_by(
+            patient_id=current_user.patient.id
+        ).order_by(
+            Appointment.date.desc(), 
+            Appointment.time.desc()
+        ).all()
+        
+        current_app.logger.info(f"Found {len(appointments)} appointments for patient {current_user.patient.id}")
+        
+        return render_template('patient/appointments.html', appointments=appointments)
+        
+    except Exception as e:
+        current_app.logger.error(f"Error fetching appointments: {str(e)}")
+        flash('Error loading appointments', 'error')
+        return redirect(url_for('patient.dashboard'))
 
-@patient_bp.route('/book-appointment')
+@patient_bp.route('/book-appointment', methods=['GET', 'POST'])
 @login_required
 @patient_required
 def book_appointment():
+    if request.method == 'POST':
+        try:
+            # Get form data
+            doctor_id = int(request.form.get('doctor'))
+            date_str = request.form.get('date')
+            time_str = request.form.get('time')
+            reason = request.form.get('reason')
+            
+            # Validate data
+            if not all([doctor_id, date_str, time_str, reason]):
+                flash('Please fill all fields', 'error')
+                return redirect(url_for('patient.book_appointment'))
+            
+            # Convert date string to date object
+            appointment_date = datetime.strptime(date_str, '%Y-%m-%d').date()
+            
+            # Convert time string to time object
+            hour, minute = map(int, time_str.split(':'))
+            appointment_time = time(hour=hour, minute=minute)
+            
+            # Create appointment
+            appointment = Appointment(
+                patient_id=current_user.patient.id,
+                doctor_id=doctor_id,
+                date=appointment_date,
+                time=appointment_time,
+                reason=reason,
+                status='scheduled'  # Using the correct status from model constraints
+            )
+            
+            current_app.logger.info(f"Creating appointment: {appointment.__dict__}")
+            
+            db.session.add(appointment)
+            db.session.commit()
+            
+            flash('Appointment booked successfully!', 'success')
+            return redirect(url_for('patient.view_appointments'))
+            
+        except ValueError as e:
+            db.session.rollback()
+            flash('Invalid date or time format', 'error')
+            current_app.logger.error(f"Appointment booking error (ValueError): {str(e)}")
+            return redirect(url_for('patient.book_appointment'))
+        except Exception as e:
+            db.session.rollback()
+            flash('Failed to book appointment. Please try again.', 'error')
+            current_app.logger.error(f"Appointment booking error: {str(e)}")
+            return redirect(url_for('patient.book_appointment'))
+    
     return render_template('patient/book_appointment.html')
 
 @patient_bp.route('/payments')
@@ -141,3 +234,34 @@ def profile():
         return redirect(url_for('patient.profile'))
     
     return render_template('patient/profile.html')
+
+@patient_bp.route('/debug')
+@login_required
+@patient_required
+def debug():
+    debug_info = {
+        'user_id': current_user.id,
+        'patient_id': current_user.patient.id,
+        'email': current_user.email,
+        'name': f"{current_user.first_name} {current_user.last_name}",
+        'qr_code_path': current_user.patient.qr_code,
+        'user_type': current_user.user_type,
+    }
+    return jsonify(debug_info)
+
+@patient_bp.route('/get-doctors')
+@login_required
+@patient_required
+def get_doctors():
+    try:
+        doctors = Doctor.query.join(Doctor.user).all()
+        doctors_list = [{
+            'id': doc.id,
+            'name': f"{doc.user.first_name} {doc.user.last_name}",
+            'specialization': doc.specialization,
+            'consultation_fee': float(doc.consultation_fee) if doc.consultation_fee else 0
+        } for doc in doctors]
+        return jsonify({'success': True, 'doctors': doctors_list})
+    except Exception as e:
+        current_app.logger.error(f"Error fetching doctors: {str(e)}")
+        return jsonify({'success': False, 'error': str(e)})

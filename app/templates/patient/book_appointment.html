@@ -3,22 +3,20 @@
 {% block title %}Book Appointment{% endblock %}
 
 {% block content %}
-<div class="container mx-auto px-4 py-6">
-    <div class="bg-white rounded-lg shadow-md p-6">
-        <h1 class="text-2xl font-bold mb-6">Book an Appointment</h1>
-        
-        <form method="POST" class="space-y-6">
+<div class="container mx-auto px-4 py-8">
+    <h1 class="text-2xl font-bold mb-6">Book an Appointment</h1>
+    
+    <div class="bg-white rounded-lg shadow p-6">
+        <form id="appointmentForm" method="POST" class="space-y-6">
             <input type="hidden" name="csrf_token" value="{{ csrf_token() }}">
             
             <div>
                 <label for="doctor" class="block text-sm font-medium text-gray-700">Select Doctor</label>
                 <select id="doctor" name="doctor" required
                         class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
-                    <option value="">Choose a doctor</option>
-                    {% for doctor in doctors %}
-                        <option value="{{ doctor.id }}">Dr. {{ doctor.name }}</option>
-                    {% endfor %}
+                    <option value="">Select a doctor</option>
                 </select>
+                <p id="doctorInfo" class="mt-2 text-sm text-gray-600"></p>
             </div>
             
             <div>
@@ -29,27 +27,92 @@
             
             <div>
                 <label for="time" class="block text-sm font-medium text-gray-700">Time</label>
-                <input type="time" id="time" name="time" required
-                       class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                <select id="time" name="time" required
+                        class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500">
+                    <option value="">Select a time</option>
+                </select>
             </div>
             
             <div>
                 <label for="reason" class="block text-sm font-medium text-gray-700">Reason for Visit</label>
-                <textarea id="reason" name="reason" rows="3"
+                <textarea id="reason" name="reason" rows="3" required
                           class="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-blue-500 focus:ring-blue-500"></textarea>
             </div>
             
-            <div class="flex justify-end space-x-4">
-                <a href="{{ url_for('patient.dashboard') }}"
-                   class="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600">
-                    Cancel
-                </a>
-                <button type="submit"
-                        class="bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
-                    Book Appointment
-                </button>
-            </div>
+            <button type="submit"
+                    class="w-full bg-blue-600 text-white py-2 px-4 rounded-md hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                Book Appointment
+            </button>
         </form>
     </div>
 </div>
+
+<script>
+document.addEventListener('DOMContentLoaded', function() {
+    // Fetch doctors when page loads
+    fetch('/patient/get-doctors')
+        .then(response => response.json())
+        .then(data => {
+            if (data.success) {
+                const doctorSelect = document.getElementById('doctor');
+                data.doctors.forEach(doctor => {
+                    const option = document.createElement('option');
+                    option.value = doctor.id;
+                    option.textContent = `Dr. ${doctor.name} - ${doctor.specialization}`;
+                    option.dataset.fee = doctor.consultation_fee;
+                    doctorSelect.appendChild(option);
+                });
+            } else {
+                console.error('Error loading doctors:', data.error);
+            }
+        })
+        .catch(error => console.error('Error fetching doctors:', error));
+    
+    // Update doctor info when selection changes
+    document.getElementById('doctor').addEventListener('change', function() {
+        const selectedOption = this.options[this.selectedIndex];
+        const doctorInfo = document.getElementById('doctorInfo');
+        if (selectedOption.value) {
+            doctorInfo.textContent = `Consultation Fee: $${selectedOption.dataset.fee}`;
+        } else {
+            doctorInfo.textContent = '';
+        }
+    });
+
+    // Set min date to today
+    const dateInput = document.getElementById('date');
+    const today = new Date().toISOString().split('T')[0];
+    dateInput.min = today;
+
+    // Populate time slots
+    function populateTimeSlots() {
+        const timeSelect = document.getElementById('time');
+        timeSelect.innerHTML = '<option value="">Select a time</option>';
+        
+        // Create time slots from 9 AM to 5 PM
+        for (let hour = 9; hour < 17; hour++) {
+            for (let minute of ['00', '30']) {
+                const time = `${hour.toString().padStart(2, '0')}:${minute}`;
+                const option = document.createElement('option');
+                option.value = time;
+                
+                // Convert to 12-hour format for display
+                const displayHour = hour > 12 ? hour - 12 : hour;
+                const ampm = hour >= 12 ? 'PM' : 'AM';
+                option.textContent = `${displayHour}:${minute} ${ampm}`;
+                
+                timeSelect.appendChild(option);
+            }
+        }
+    }
+
+    // Populate time slots initially
+    populateTimeSlots();
+
+    // Update time slots when date changes
+    dateInput.addEventListener('change', function() {
+        populateTimeSlots();
+    });
+});
+</script>
 {% endblock %} 
