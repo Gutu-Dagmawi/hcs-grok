@@ -61,7 +61,7 @@ class Doctor(Model, TimestampMixin):
     )
     
     # Relationships
-    appointments = db.relationship('Appointment', backref='doctor_rel', lazy=True)
+    appointments = db.relationship('Appointment', back_populates='doctor')
     medical_records = db.relationship('MedicalRecord', backref='doctor_rel', lazy=True)
 
 class Patient(Model, TimestampMixin):
@@ -80,7 +80,7 @@ class Patient(Model, TimestampMixin):
     emergency_phone = db.Column(db.String(20))
     
     # Existing relationships
-    appointments = db.relationship('Appointment', backref='patient_rel', lazy=True)
+    appointments = db.relationship('Appointment', back_populates='patient')
     medical_records = db.relationship('MedicalRecord', backref='patient_rel', lazy=True)
     payments = db.relationship('Payment', back_populates='patient', overlaps="patient_rel")
 

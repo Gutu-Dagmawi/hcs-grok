@@ -6,6 +6,7 @@ from wtforms.validators import DataRequired, Email, EqualTo, Length
 from . import auth_bp
 from app.models import User, Patient, Doctor
 from app.extensions import db
+from flask_wtf.csrf import generate_csrf
 
 class LoginForm(FlaskForm):
     email = EmailField('Email', validators=[DataRequired(), Email()])
@@ -106,7 +107,13 @@ def logout():
 
 @auth_bp.route('/register/doctor', methods=['GET', 'POST'])
 def register_doctor():
-    form_data = {}
+    if current_user.is_authenticated:
+        return redirect(url_for('main.index'))
+    
+    form_data = {
+        'csrf_token': generate_csrf()  # Generate CSRF token
+    }
+    
     if request.method == 'POST':
         form_data = {
             'email': request.form['email'],
@@ -163,4 +170,25 @@ def register_doctor():
             current_app.logger.error(f"Doctor registration error: {str(e)}")
             return render_template('auth/register_doctor.html', form_data=form_data)
     
-    return render_template('auth/register_doctor.html', form_data=form_data)
+    specializations = [
+        'Cardiology',
+        'Dermatology',
+        'Endocrinology',
+        'Family Medicine',
+        'Gastroenterology',
+        'Neurology',
+        'Obstetrics and Gynecology',
+        'Oncology',
+        'Ophthalmology',
+        'Orthopedics',
+        'Pediatrics',
+        'Psychiatry',
+        'Pulmonology',
+        'Radiology',
+        'Surgery',
+        'Urology'
+    ]
+    
+    return render_template('auth/register_doctor.html', 
+                         form_data=form_data,
+                         specializations=specializations)

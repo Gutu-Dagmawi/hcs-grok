@@ -4,6 +4,8 @@ from app.extensions import db
 import os
 from datetime import datetime, date, time
 import qrcode
+from sqlalchemy import desc, text
+from sqlalchemy.orm import joinedload
 
 from app.models.medical import Appointment
 from . import patient_bp
@@ -11,36 +13,63 @@ from app.utils.decorators import patient_required
 from qrcode import QRCode
 from app.models import User, Patient, Doctor
 
+
 @patient_bp.route('/dashboard')
 @login_required
 @patient_required
 def dashboard():
     try:
-        # Get upcoming appointments
-        today = date.today()
-        upcoming_appointments = (
+        print("\n=== DASHBOARD DEBUG ===")
+        
+        # First get all appointments (like in view_appointments)
+        all_appointments = (
             Appointment.query
-            .filter(
-                Appointment.patient_id == current_user.patient.id,
-                Appointment.date >= today,
-                Appointment.status.in_(['scheduled', 'confirmed'])
-            )
-            .order_by(
-                Appointment.date.asc(),
-                Appointment.time.asc()
-            )
-            .limit(5)
+            .filter_by(patient_id=current_user.patient.id)
+            .order_by(Appointment.date.desc(), Appointment.time.desc())
             .all()
         )
         
+        print(f"All appointments count: {len(all_appointments)}")
+        if all_appointments:
+            print("First appointment details:")
+            apt = all_appointments[0]
+            print(f"ID: {apt.id}")
+            print(f"Date: {apt.date}")
+            print(f"Time: {apt.time}")
+            print(f"Status: {apt.status}")
+        
+        # Now get the recent appointment
+        recent_appointment = (
+            Appointment.query
+            .filter_by(patient_id=current_user.patient.id)
+            .order_by(Appointment.date.desc(), Appointment.time.desc())
+            .first()
+        )
+        
+        print("\nRecent appointment query result:")
+        if recent_appointment:
+            print(f"ID: {recent_appointment.id}")
+            print(f"Date: {recent_appointment.date}")
+            print(f"Time: {recent_appointment.time}")
+            print(f"Status: {recent_appointment.status}")
+        else:
+            print("No recent appointment found")
+            
+        print("=== END DEBUG ===\n")
+        
+        # Pass both to template for comparison
         return render_template('patient/dashboard.html',
-                             upcoming_appointments=upcoming_appointments)
+                             recent_appointment=recent_appointment,
+                             all_appointments=all_appointments)
                              
     except Exception as e:
-        current_app.logger.error(f"Dashboard error: {str(e)}")
-        flash('Error loading dashboard', 'error')
+        print(f"Error in dashboard: {str(e)}")
+        import traceback
+        traceback.print_exc()
         return render_template('patient/dashboard.html',
-                             upcoming_appointments=[])
+                             recent_appointment=None,
+                             all_appointments=[])
+
 
 @patient_bp.route('/generate-qr', methods=['POST'])
 @login_required
@@ -123,16 +152,23 @@ def generate_qr():
 def view_appointments():
     try:
         # Get all appointments for the current patient
-        appointments = Appointment.query.filter_by(
-            patient_id=current_user.patient.id
-        ).order_by(
-            Appointment.date.desc(), 
-            Appointment.time.desc()
-        ).all()
+        appointments = (
+            Appointment.query
+            .filter_by(patient_id=current_user.patient.id)  # Filter by current patient
+            .order_by(
+                Appointment.date.desc(),  # Most recent first
+                Appointment.time.desc()
+            )
+            .all()
+        )
         
-        current_app.logger.info(f"Found {len(appointments)} appointments for patient {current_user.patient.id}")
+        current_app.logger.info(
+            f"Found {len(appointments)} appointments for patient {current_user.patient.id} "
+            f"(user: {current_user.email})"
+        )
         
-        return render_template('patient/appointments.html', appointments=appointments)
+        return render_template('patient/appointments.html', 
+                             appointments=appointments)
         
     except Exception as e:
         current_app.logger.error(f"Error fetching appointments: {str(e)}")

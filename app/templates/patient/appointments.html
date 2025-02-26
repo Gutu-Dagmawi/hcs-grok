@@ -1,9 +1,9 @@
-{% extends "base.html" %}
+{% extends "base.html" %}           
 
 {% block title %}My Appointments{% endblock %}
 
 {% block content %}
-<div class="max-w-6xl mx-auto">
+<div class="container mx-auto px-4 py-8">
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-2xl font-bold text-gray-800">My Appointments</h1>
         <a href="{{ url_for('patient.book_appointment') }}"
@@ -11,10 +11,10 @@
             Book New Appointment
         </a>
     </div>
-    
-    {% if appointments %}
-        <!-- Appointments List -->
-        <div class="bg-white rounded-lg shadow-md overflow-hidden">
+
+    <!-- All Appointments -->
+    <div class="bg-white rounded-lg shadow-md overflow-hidden">
+        {% if appointments %}
             <div class="overflow-x-auto">
                 <table class="min-w-full divide-y divide-gray-200">
                     <thead class="bg-gray-50">
@@ -47,25 +47,22 @@
                                         {{ appointment.time.strftime('%I:%M %p') if appointment.time else 'No time set' }}
                                     </div>
                                 </td>
-                                
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <div class="text-sm font-medium text-gray-900">
-                                        Dr. {{ appointment.doctor_rel.user.first_name }} {{ appointment.doctor_rel.user.last_name }}
+                                        Dr. {{ appointment.doctor.user.first_name }} {{ appointment.doctor.user.last_name }}
                                     </div>
                                     <div class="text-sm text-gray-500">
-                                        {{ appointment.doctor_rel.specialization }}
+                                        {{ appointment.doctor.specialization }}
                                     </div>
                                 </td>
-                                
                                 <td class="px-6 py-4">
                                     <div class="text-sm text-gray-900 max-w-xs truncate">
                                         {{ appointment.reason }}
                                     </div>
                                 </td>
-                                
                                 <td class="px-6 py-4 whitespace-nowrap">
                                     <span class="px-2 inline-flex text-xs leading-5 font-semibold rounded-full
-                                               {% if appointment.status == 'pending' %}bg-yellow-100 text-yellow-800
+                                               {% if appointment.status == 'scheduled' %}bg-yellow-100 text-yellow-800
                                                {% elif appointment.status == 'confirmed' %}bg-green-100 text-green-800
                                                {% elif appointment.status == 'completed' %}bg-blue-100 text-blue-800
                                                {% elif appointment.status == 'cancelled' %}bg-red-100 text-red-800
@@ -73,9 +70,8 @@
                                         {{ appointment.status|title }}
                                     </span>
                                 </td>
-                                
                                 <td class="px-6 py-4 whitespace-nowrap text-sm">
-                                    {% if appointment.status == 'pending' %}
+                                    {% if appointment.status in ['scheduled', 'pending'] %}
                                         <button onclick="cancelAppointment({{ appointment.id }})"
                                                 class="text-red-600 hover:text-red-900">
                                             Cancel
@@ -87,19 +83,12 @@
                     </tbody>
                 </table>
             </div>
-        </div>
-    {% else %}
-        <!-- No Appointments -->
-        <div class="bg-white rounded-lg shadow-md p-6 text-center">
-            <div class="text-gray-500 mb-4">
-                You don't have any appointments yet.
+        {% else %}
+            <div class="p-4 text-center text-gray-500">
+                No appointments found
             </div>
-            <a href="{{ url_for('patient.book_appointment') }}"
-               class="inline-block bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700">
-                Book Your First Appointment
-            </a>
-        </div>
-    {% endif %}
+        {% endif %}
+    </div>
 </div>
 
 <!-- Medical Record Modal -->

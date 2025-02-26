@@ -32,6 +32,8 @@ class Appointment(Model, TimestampMixin):
     reason = db.Column(db.String(200))
     notes = db.Column(db.Text)
     
+    patient = db.relationship('Patient', back_populates='appointments')
+    doctor = db.relationship('Doctor', back_populates='appointments')
     payment = db.relationship('Payment', back_populates='appointment', uselist=False)
 
 class MedicalRecord(Model, TimestampMixin):
