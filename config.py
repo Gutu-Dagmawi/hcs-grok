@@ -1,15 +1,17 @@
 import os
 from datetime import timedelta
 
+basedir = os.path.abspath(os.path.dirname(__file__))
+
 class Config:
     """Base configuration."""
     # Security
-    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-secret-key'
+    SECRET_KEY = os.environ.get('SECRET_KEY') or 'dev-key-please-change'
     CSRF_ENABLED = True
     
     # Database
     SQLALCHEMY_DATABASE_URI = os.environ.get('DATABASE_URL') or \
-        'sqlite:///hcs.db'
+        'sqlite:///' + os.path.join(basedir, 'instance', 'hcs.db')
     SQLALCHEMY_TRACK_MODIFICATIONS = False
     
     # Session configuration

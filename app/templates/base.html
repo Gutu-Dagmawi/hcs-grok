@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{% block title %}{% endblock %} - Hospital Cardless System</title>
+    <title>{% block title %}Healthcare System{% endblock %}</title>
     
     <!-- Tailwind CSS via CDN -->
     <script src="https://cdn.tailwindcss.com"></script>
@@ -29,19 +29,19 @@
                 
                 <div class="flex items-center space-x-4">
                     {% if current_user.is_authenticated %}
-                        {% if current_user.user_type.value == 'admin' %}
+                        {% if current_user.user_type == 'admin' %}
                             <a href="{{ url_for('admin.dashboard') }}" class="hover:text-gray-200">Dashboard</a>
                             <a href="{{ url_for('admin.patients') }}" class="hover:text-gray-200">Patients</a>
                             <a href="{{ url_for('admin.doctors') }}" class="hover:text-gray-200">Doctors</a>
                             <a href="{{ url_for('admin.appointments') }}" class="hover:text-gray-200">Appointments</a>
                             <a href="{{ url_for('admin.payments') }}" class="hover:text-gray-200">Payments</a>
                             <a href="{{ url_for('admin.statistics') }}" class="hover:text-gray-200">Statistics</a>
-                        {% elif current_user.user_type.value == 'doctor' %}
-                            <a href="{{ url_for('doctor.dashboard') }}" class="hover:text-gray-200">Dashboard</a>
+                        {% elif current_user.user_type == 'doctor' %}
+                            <a href="{{ url_for('main.dashboard') }}" class="hover:text-gray-200">Dashboard</a>
                             <a href="{{ url_for('doctor.appointments') }}" class="hover:text-gray-200">Appointments</a>
                             <a href="{{ url_for('doctor.availability') }}" class="hover:text-gray-200">Availability</a>
-                        {% else %}
-                            <a href="{{ url_for('patient.dashboard') }}" class="hover:text-gray-200">Dashboard</a>
+                        {% elif current_user.user_type == 'patient' %}
+                            <a href="{{ url_for('main.dashboard') }}" class="hover:text-gray-200">Dashboard</a>
                             <a href="{{ url_for('patient.appointments') }}" class="hover:text-gray-200">Appointments</a>
                             <a href="{{ url_for('patient.payments') }}" class="hover:text-gray-200">Payments</a>
                             <a href="{{ url_for('patient.profile') }}" class="hover:text-gray-200">Profile</a>

@@ -1,0 +1,17 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>Patients</h1>
+    <div class="patients-list">
+        {% for patient in patients %}
+        <div class="patient-card">
+            <h3>{{ patient.user.first_name }} {{ patient.user.last_name }}</h3>
+            <p>Email: {{ patient.user.email }}</p>
+        </div>
+        {% else %}
+        <p>No patients found.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 

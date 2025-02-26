@@ -1,93 +1,71 @@
-from werkzeug.security import generate_password_hash, check_password_hash
+from app.extensions import db
 from flask_login import UserMixin
-from app import db, login_manager
-from app.models.base import Model, TimestampMixin, PaginatedMixin
-import enum
+from werkzeug.security import generate_password_hash, check_password_hash
+from enum import Enum
+from app.models.base import Model, TimestampMixin
 
-class UserType(enum.Enum):
-    PATIENT = "patient"
-    ADMIN = "admin"
-    DOCTOR = "doctor"
+class UserType(Enum):
+    PATIENT = 'patient'
+    DOCTOR = 'doctor'
+    ADMIN = 'admin'
 
 class User(UserMixin, Model, TimestampMixin):
-    """Base user model."""
     __tablename__ = 'users'
-
     id = db.Column(db.Integer, primary_key=True)
-    email = db.Column(db.String(120), unique=True, nullable=False, index=True)
+    email = db.Column(db.String(120), unique=True, nullable=False)
     password_hash = db.Column(db.String(128))
-    user_type = db.Column(db.Enum(UserType), nullable=False)
-    is_active = db.Column(db.Boolean, default=True)
+    first_name = db.Column(db.String(64))
+    last_name = db.Column(db.String(64))
+    user_type = db.Column(
+        db.String(20),
+        nullable=False,
+        info={'check_constraint': "user_type IN ('patient', 'doctor', 'admin')"}
+    )
 
-    __mapper_args__ = {
-        'polymorphic_identity': 'user',
-        'polymorphic_on': user_type
-    }
+    # Relationships
+    patient = db.relationship('Patient', backref='user', uselist=False)
+    doctor = db.relationship('Doctor', backref='user', uselist=False)
+    admin = db.relationship('Admin', backref='user', uselist=False)
 
-    def set_password(self, password):
-        """Set the user's password."""
+    @property
+    def password(self):
+        raise AttributeError('password is not a readable attribute')
+
+    @password.setter
+    def password(self, password):
         self.password_hash = generate_password_hash(password)
 
     def check_password(self, password):
-        """Check if the provided password matches the hash."""
         return check_password_hash(self.password_hash, password)
 
-class Patient(User):
-    """Patient model with additional fields."""
-    __tablename__ = 'patients'
+class Doctor(Model, TimestampMixin):
+    __tablename__ = 'doctors'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    specialization = db.Column(db.String(100))
+    appointments = db.relationship('Appointment', backref='doctor_rel', lazy=True)
 
-    id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    phone = db.Column(db.String(20), nullable=False)
-    qr_code = db.Column(db.String(200), unique=True)
+class Patient(Model, TimestampMixin):
+    __tablename__ = 'patients'
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False)
+    qr_code = db.Column(db.String(255))
+    
+    # Add new fields
+    phone = db.Column(db.String(20))
     date_of_birth = db.Column(db.Date)
-    gender = db.Column(db.String(10))
-    address = db.Column(db.String(200))
+    address = db.Column(db.String(255))
     blood_type = db.Column(db.String(5))
+    gender = db.Column(db.String(10))
     emergency_contact = db.Column(db.String(100))
     emergency_phone = db.Column(db.String(20))
+    
+    # Existing relationships
+    appointments = db.relationship('Appointment', backref='patient_rel', lazy=True)
+    medical_records = db.relationship('MedicalRecord', backref='patient_rel', lazy=True)
+    payments = db.relationship('Payment', back_populates='patient', overlaps="patient_rel")
 
-    # Relationships
-    appointments = db.relationship('Appointment', back_populates='patient')
-    medical_records = db.relationship('MedicalRecord', back_populates='patient')
-    payments = db.relationship('Payment', back_populates='patient')
-
-    __mapper_args__ = {
-        'polymorphic_identity': UserType.PATIENT,
-    }
-
-class Admin(User):
-    """Admin model with additional fields."""
+class Admin(Model, TimestampMixin):
     __tablename__ = 'admins'
-
-    id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    role = db.Column(db.String(50), nullable=False)
-    department = db.Column(db.String(100))
-
-    __mapper_args__ = {
-        'polymorphic_identity': UserType.ADMIN,
-    }
-
-class Doctor(User):
-    """Doctor model with additional fields."""
-    __tablename__ = 'doctors'
-
-    id = db.Column(db.Integer, db.ForeignKey('users.id'), primary_key=True)
-    name = db.Column(db.String(100), nullable=False)
-    specialty = db.Column(db.String(100), nullable=False)
-    license_number = db.Column(db.String(50), unique=True)
-    availability = db.Column(db.JSON)  # Store weekly schedule as JSON
-    room_number = db.Column(db.String(20))
-
-    # Relationships
-    appointments = db.relationship('Appointment', back_populates='doctor')
-
-    __mapper_args__ = {
-        'polymorphic_identity': UserType.DOCTOR,
-    }
-
-@login_manager.user_loader
-def load_user(id):
-    """Load a user given the ID."""
-    return User.query.get(int(id)) 
+    id = db.Column(db.Integer, primary_key=True)
+    user_id = db.Column(db.Integer, db.ForeignKey('users.id'), nullable=False) 

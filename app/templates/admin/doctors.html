@@ -1,0 +1,18 @@
+{% extends "base.html" %}
+
+{% block content %}
+<div class="container">
+    <h1>Doctors</h1>
+    <div class="doctors-list">
+        {% for doctor in doctors %}
+        <div class="doctor-card">
+            <h3>{{ doctor.user.first_name }} {{ doctor.user.last_name }}</h3>
+            <p>Email: {{ doctor.user.email }}</p>
+            <p>Specialization: {{ doctor.specialization }}</p>
+        </div>
+        {% else %}
+        <p>No doctors found.</p>
+        {% endfor %}
+    </div>
+</div>
+{% endblock %} 

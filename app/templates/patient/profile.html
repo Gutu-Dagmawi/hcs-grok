@@ -26,71 +26,43 @@
             <div>
                 <h2 class="text-xl font-semibold text-gray-800 mb-4">Basic Information</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Name (Read-only) -->
+                    <!-- Name fields -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Full Name
-                        </label>
-                        <input type="text" value="{{ current_user.name }}" readonly
-                               class="w-full px-4 py-2 border rounded-lg bg-gray-50 text-gray-700">
+                        <label for="first_name" class="block text-sm font-medium text-gray-700 mb-2">First Name</label>
+                        <input type="text" name="first_name" id="first_name" value="{{ current_user.first_name or '' }}" class="w-full px-4 py-2 border rounded-lg">
                     </div>
-                    
-                    <!-- Email (Read-only) -->
                     <div>
-                        <label class="block text-sm font-medium text-gray-700 mb-2">
-                            Email Address
-                        </label>
-                        <input type="email" value="{{ current_user.email }}" readonly
-                               class="w-full px-4 py-2 border rounded-lg bg-gray-50 text-gray-700">
+                        <label for="last_name" class="block text-sm font-medium text-gray-700 mb-2">Last Name</label>
+                        <input type="text" name="last_name" id="last_name" value="{{ current_user.last_name or '' }}" class="w-full px-4 py-2 border rounded-lg">
                     </div>
                     
                     <!-- Phone -->
                     <div>
-                        <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">
-                            Phone Number
-                        </label>
-                        <input type="tel" name="phone" id="phone"
-                               value="{{ current_user.phone }}"
-                               class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <label for="phone" class="block text-sm font-medium text-gray-700 mb-2">Phone Number</label>
+                        <input type="tel" name="phone" id="phone" value="{{ current_user.patient.phone or '' }}" class="w-full px-4 py-2 border rounded-lg">
                     </div>
                     
                     <!-- Date of Birth -->
                     <div>
-                        <label for="date_of_birth" class="block text-sm font-medium text-gray-700 mb-2">
-                            Date of Birth
-                        </label>
-                        <input type="date" name="date_of_birth" id="date_of_birth"
-                               value="{{ current_user.date_of_birth.strftime('%Y-%m-%d') if current_user.date_of_birth }}"
-                               class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <label for="date_of_birth" class="block text-sm font-medium text-gray-700 mb-2">Date of Birth</label>
+                        <input type="date" name="date_of_birth" id="date_of_birth" 
+                               value="{{ current_user.patient.date_of_birth.strftime('%Y-%m-%d') if current_user.patient.date_of_birth else '' }}" 
+                               class="w-full px-4 py-2 border rounded-lg">
                     </div>
-                </div>
-            </div>
-            
-            <!-- Additional Information -->
-            <div>
-                <h2 class="text-xl font-semibold text-gray-800 mb-4">Additional Information</h2>
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    
                     <!-- Address -->
                     <div class="md:col-span-2">
-                        <label for="address" class="block text-sm font-medium text-gray-700 mb-2">
-                            Address
-                        </label>
-                        <input type="text" name="address" id="address"
-                               value="{{ current_user.address }}"
-                               class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <label for="address" class="block text-sm font-medium text-gray-700 mb-2">Address</label>
+                        <input type="text" name="address" id="address" value="{{ current_user.patient.address or '' }}" class="w-full px-4 py-2 border rounded-lg">
                     </div>
                     
                     <!-- Blood Type -->
                     <div>
-                        <label for="blood_type" class="block text-sm font-medium text-gray-700 mb-2">
-                            Blood Type
-                        </label>
-                        <select name="blood_type" id="blood_type"
-                                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <label for="blood_type" class="block text-sm font-medium text-gray-700 mb-2">Blood Type</label>
+                        <select name="blood_type" id="blood_type" class="w-full px-4 py-2 border rounded-lg">
                             <option value="">Select Blood Type</option>
                             {% for blood_type in ['A+', 'A-', 'B+', 'B-', 'AB+', 'AB-', 'O+', 'O-'] %}
-                                <option value="{{ blood_type }}"
-                                        {% if current_user.blood_type == blood_type %}selected{% endif %}>
+                                <option value="{{ blood_type }}" {% if current_user.patient.blood_type == blood_type %}selected{% endif %}>
                                     {{ blood_type }}
                                 </option>
                             {% endfor %}
@@ -99,15 +71,11 @@
                     
                     <!-- Gender -->
                     <div>
-                        <label for="gender" class="block text-sm font-medium text-gray-700 mb-2">
-                            Gender
-                        </label>
-                        <select name="gender" id="gender"
-                                class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <label for="gender" class="block text-sm font-medium text-gray-700 mb-2">Gender</label>
+                        <select name="gender" id="gender" class="w-full px-4 py-2 border rounded-lg">
                             <option value="">Select Gender</option>
                             {% for gender in ['Male', 'Female', 'Other'] %}
-                                <option value="{{ gender }}"
-                                        {% if current_user.gender == gender %}selected{% endif %}>
+                                <option value="{{ gender }}" {% if current_user.patient.gender == gender %}selected{% endif %}>
                                     {{ gender }}
                                 </option>
                             {% endfor %}
@@ -120,24 +88,15 @@
             <div>
                 <h2 class="text-xl font-semibold text-gray-800 mb-4">Emergency Contact</h2>
                 <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                    <!-- Emergency Contact Name -->
                     <div>
-                        <label for="emergency_contact" class="block text-sm font-medium text-gray-700 mb-2">
-                            Contact Name
-                        </label>
-                        <input type="text" name="emergency_contact" id="emergency_contact"
-                               value="{{ current_user.emergency_contact }}"
-                               class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <label for="emergency_contact" class="block text-sm font-medium text-gray-700 mb-2">Contact Name</label>
+                        <input type="text" name="emergency_contact" id="emergency_contact" 
+                               value="{{ current_user.patient.emergency_contact or '' }}" class="w-full px-4 py-2 border rounded-lg">
                     </div>
-                    
-                    <!-- Emergency Contact Phone -->
                     <div>
-                        <label for="emergency_phone" class="block text-sm font-medium text-gray-700 mb-2">
-                            Contact Phone
-                        </label>
-                        <input type="tel" name="emergency_phone" id="emergency_phone"
-                               value="{{ current_user.emergency_phone }}"
-                               class="w-full px-4 py-2 border rounded-lg focus:ring-2 focus:ring-blue-500 focus:border-blue-500">
+                        <label for="emergency_phone" class="block text-sm font-medium text-gray-700 mb-2">Contact Phone</label>
+                        <input type="tel" name="emergency_phone" id="emergency_phone" 
+                               value="{{ current_user.patient.emergency_phone or '' }}" class="w-full px-4 py-2 border rounded-lg">
                     </div>
                 </div>
             </div>
@@ -146,13 +105,13 @@
             <div>
                 <h2 class="text-xl font-semibold text-gray-800 mb-4">Digital ID</h2>
                 <div class="flex items-center justify-center p-6 bg-gray-50 rounded-lg">
-                    {% if current_user.qr_code %}
+                    {% if current_user.patient.qr_code %}
                         <div class="text-center">
-                            <img src="{{ url_for('static', filename=current_user.qr_code) }}"
+                            <img src="{{ url_for('static', filename=current_user.patient.qr_code) }}"
                                  alt="Patient QR Code"
                                  class="mx-auto mb-4"
                                  style="width: 200px; height: 200px;">
-                            <a href="{{ url_for('static', filename=current_user.qr_code) }}"
+                            <a href="{{ url_for('static', filename=current_user.patient.qr_code) }}"
                                download="patient_qr_code.png"
                                class="inline-block bg-blue-600 text-white px-4 py-2 rounded hover:bg-blue-700">
                                 Download QR Code
@@ -166,8 +125,7 @@
             
             <!-- Submit Button -->
             <div class="flex justify-end">
-                <button type="submit"
-                        class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2">
+                <button type="submit" class="bg-blue-600 text-white px-6 py-2 rounded-lg hover:bg-blue-700">
                     Save Changes
                 </button>
             </div>

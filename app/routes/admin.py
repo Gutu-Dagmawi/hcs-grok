@@ -1,16 +1,18 @@
 from flask import Blueprint, render_template, redirect, url_for, flash, request, jsonify
 from flask_login import login_required, current_user
-from app import db
-from app.models.user import User, Patient, Doctor, Admin, UserType
+from app.extensions import db
+from app.models import User, Patient, Doctor, Admin, UserType
 from app.models.medical import Appointment, MedicalRecord, Payment, AppointmentStatus, PaymentStatus
 from datetime import datetime, timedelta
 import plotly.express as px
 import pandas as pd
+from functools import wraps
 
-bp = Blueprint('admin', __name__, url_prefix='/admin')
+admin_bp = Blueprint('admin', __name__, url_prefix='/admin')
 
 def admin_required(f):
     """Decorator to require admin access."""
+    @wraps(f)
     def decorated_function(*args, **kwargs):
         if not current_user.is_authenticated or current_user.user_type != UserType.ADMIN:
             flash('Admin access required', 'error')
@@ -19,7 +21,7 @@ def admin_required(f):
     decorated_function.__name__ = f.__name__
     return decorated_function
 
-@bp.route('/dashboard')
+@admin_bp.route('/dashboard')
 @login_required
 @admin_required
 def dashboard():
@@ -53,7 +55,7 @@ def dashboard():
                          recent_appointments=recent_appointments,
                          payment_stats=payment_stats)
 
-@bp.route('/patients')
+@admin_bp.route('/patients')
 @login_required
 @admin_required
 def patients():
@@ -61,7 +63,7 @@ def patients():
     patients = Patient.query.order_by(Patient.created_at.desc()).all()
     return render_template('admin/patients.html', patients=patients)
 
-@bp.route('/patient/<int:id>')
+@admin_bp.route('/patient/<int:id>')
 @login_required
 @admin_required
 def patient_details(id):
@@ -69,7 +71,7 @@ def patient_details(id):
     patient = Patient.query.get_or_404(id)
     return render_template('admin/patient_details.html', patient=patient)
 
-@bp.route('/doctors')
+@admin_bp.route('/doctors')
 @login_required
 @admin_required
 def doctors():
@@ -77,7 +79,7 @@ def doctors():
     doctors = Doctor.query.order_by(Doctor.created_at.desc()).all()
     return render_template('admin/doctors.html', doctors=doctors)
 
-@bp.route('/doctor/<int:id>', methods=['GET', 'POST'])
+@admin_bp.route('/doctor/<int:id>', methods=['GET', 'POST'])
 @login_required
 @admin_required
 def doctor_details(id):
@@ -98,7 +100,7 @@ def doctor_details(id):
     
     return render_template('admin/doctor_details.html', doctor=doctor)
 
-@bp.route('/appointments')
+@admin_bp.route('/appointments')
 @login_required
 @admin_required
 def appointments():
@@ -106,7 +108,7 @@ def appointments():
     appointments = Appointment.query.order_by(Appointment.date.desc()).all()
     return render_template('admin/appointments.html', appointments=appointments)
 
-@bp.route('/appointment/<int:id>', methods=['POST'])
+@admin_bp.route('/appointment/<int:id>', methods=['POST'])
 @login_required
 @admin_required
 def update_appointment(id):
@@ -125,7 +127,7 @@ def update_appointment(id):
     
     return redirect(url_for('admin.appointments'))
 
-@bp.route('/payments')
+@admin_bp.route('/payments')
 @login_required
 @admin_required
 def payments():
@@ -133,7 +135,7 @@ def payments():
     payments = Payment.query.order_by(Payment.created_at.desc()).all()
     return render_template('admin/payments.html', payments=payments)
 
-@bp.route('/statistics')
+@admin_bp.route('/statistics')
 @login_required
 @admin_required
 def statistics():
@@ -169,4 +171,45 @@ def statistics():
     
     return render_template('admin/statistics.html',
                          doctor_chart=doctor_chart,
-                         payment_chart=payment_chart) 
+                         payment_chart=payment_chart)
+
+@admin_bp.route('/admin')
+@login_required
+@admin_required
+def admin_dashboard():
+    doctors = Doctor.query.join(User).all()
+    return render_template('admin/dashboard.html', doctors=doctors)
+
+@admin_bp.route('/admin/doctors/add', methods=['GET', 'POST'])
+@login_required
+@admin_required
+def add_doctor():
+    if request.method == 'POST':
+        try:
+            # Create user for doctor
+            new_user = User(
+                email=request.form['email'],
+                password=request.form['password'],
+                first_name=request.form['first_name'],
+                last_name=request.form['last_name'],
+                user_type='doctor'
+            )
+            db.session.add(new_user)
+            db.session.flush()
+
+            # Create doctor profile
+            new_doctor = Doctor(
+                user_id=new_user.id,
+                specialization=request.form['specialization']
+            )
+            db.session.add(new_doctor)
+            db.session.commit()
+            
+            flash('Doctor added successfully!', 'success')
+            return redirect(url_for('admin.admin_dashboard'))
+            
+        except Exception as e:
+            db.session.rollback()
+            flash(f'Error adding doctor: {str(e)}', 'error')
+            
+    return render_template('admin/add_doctor.html') 
