@@ -48,6 +48,13 @@ class MedicalRecord(Model, TimestampMixin):
     notes = db.Column(db.Text)
     date = db.Column(db.DateTime, default=datetime.utcnow)
 
+    # Add relationships without backref (since they already exist)
+    doctor = db.relationship('Doctor')
+    patient = db.relationship('Patient')
+
+    def __repr__(self):
+        return f'<MedicalRecord {self.id}>'
+
 class Payment(Model, TimestampMixin):
     """Payment model."""
     __tablename__ = 'payments'

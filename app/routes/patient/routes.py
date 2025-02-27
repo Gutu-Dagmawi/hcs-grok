@@ -7,7 +7,7 @@ import qrcode
 from sqlalchemy import desc, text
 from sqlalchemy.orm import joinedload
 
-from app.models.medical import Appointment
+from app.models.medical import Appointment, MedicalRecord
 from . import patient_bp
 from app.utils.decorators import patient_required
 from qrcode import QRCode
@@ -301,3 +301,53 @@ def get_doctors():
     except Exception as e:
         current_app.logger.error(f"Error fetching doctors: {str(e)}")
         return jsonify({'success': False, 'error': str(e)})
+
+@patient_bp.route('/medical-records')
+@login_required
+@patient_required
+def view_medical_records():
+    try:
+        print("\n=== MEDICAL RECORDS DEBUG ===")
+        print(f"Current user ID: {current_user.id}")
+        print(f"Patient ID: {current_user.patient.id}")
+        
+        # Get medical records
+        medical_records = MedicalRecord.query.filter_by(patient_id=current_user.patient.id).all()
+        print(f"Found {len(medical_records)} records")
+        
+        # Get doctor information separately
+        records_with_doctors = []
+        for record in medical_records:
+            doctor = Doctor.query.get(record.doctor_id)
+            doctor_user = User.query.get(doctor.user_id) if doctor else None
+            
+            records_with_doctors.append({
+                'id': record.id,
+                'date': record.date,
+                'diagnosis': record.diagnosis,
+                'prescription': record.prescription,
+                'notes': record.notes,
+                'doctor_name': f"Dr. {doctor_user.first_name} {doctor_user.last_name}" if doctor_user else "Unknown",
+                'doctor_specialization': doctor.specialization if doctor else "Unknown"
+            })
+            
+            print(f"""
+Record ID: {record.id}
+Patient ID: {record.patient_id}
+Doctor ID: {record.doctor_id}
+Doctor Name: {doctor_user.first_name if doctor_user else 'Unknown'}
+Date: {record.date}
+Diagnosis: {record.diagnosis}
+            """)
+            
+        print("=== END DEBUG ===\n")
+        
+        return render_template('patient/medical_records.html',
+                             medical_records=records_with_doctors)
+                             
+    except Exception as e:
+        print(f"Error in view_medical_records: {str(e)}")
+        import traceback
+        traceback.print_exc()
+        flash('Error loading medical records.', 'error')
+        return redirect(url_for('patient.dashboard'))

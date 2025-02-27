@@ -7,6 +7,7 @@ from . import auth_bp
 from app.models import User, Patient, Doctor
 from app.extensions import db
 from flask_wtf.csrf import generate_csrf
+from werkzeug.security import generate_password_hash
 
 class LoginForm(FlaskForm):
     email = EmailField('Email', validators=[DataRequired(), Email()])
@@ -161,7 +162,7 @@ def register_doctor():
             db.session.add(user)
             db.session.commit()
             
-            flash('Registration successful. Please wait for admin approval.', 'success')
+            flash('Registration successful! Please log in.', 'success')
             return redirect(url_for('auth.login'))
             
         except Exception as e:
